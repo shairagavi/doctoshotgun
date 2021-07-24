@@ -214,12 +214,23 @@ class CityNotFound(Exception):
     pass
 
 
+class CountryCenters():
+    def __init__(self, centers, center):
+        self.centers = centers
+        self.center = center
+
+    def get_centers(self):
+        return self.centers
+
+    def get_center(self):
+        return self.center
+
+
 class Doctolib(LoginBrowser):
     # individual properties for each country. To be defined in subclasses
     BASEURL = ""
     vaccine_motives = {}
-    centers = URL('')
-    center = URL('')
+    country_centers = CountryCenters(URL(''), URL(''))
     # common properties
     login = URL('/login.json', LoginPage)
     send_auth_code = URL('/api/accounts/send_auth_code', SendAuthCodePage)
@@ -298,7 +309,7 @@ class Doctolib(LoginBrowser):
             motives = self.vaccine_motives.keys()
         for city in where:
             try:
-                self.centers.go(where=city, params={
+                self.country_centers.get_centers().go(where=city, params={
                                 'ref_visit_motive_ids[]': motives, 'page': page})
             except ServerError as e:
                 if e.response.status_code in [503]:
@@ -570,8 +581,7 @@ class DoctolibDE(Doctolib):
         KEY_ASTRAZENECA: 'AstraZeneca',
         KEY_ASTRAZENECA_SECOND: 'Zweit.*AstraZeneca|AstraZeneca.*Zweit',
     }
-    centers = URL(r'/impfung-covid-19-corona/(?P<where>\w+)', CentersPage)
-    center = URL(r'/praxis/.*', CenterPage)
+    country_centers = CountryCenters(URL(r'/impfung-covid-19-corona/(?P<where>\w+)', CentersPage), URL(r'/praxis/.*', CenterPage))
 
 
 class DoctolibFR(Doctolib):
@@ -596,10 +606,7 @@ class DoctolibFR(Doctolib):
         KEY_ASTRAZENECA: 'AstraZeneca',
         KEY_ASTRAZENECA_SECOND: '2de.*AstraZeneca',
     }
-
-    centers = URL(r'/vaccination-covid-19/(?P<where>\w+)', CentersPage)
-    center = URL(r'/centre-de-sante/.*', CenterPage)
-
+    country_centers = CountryCenters(URL(r'/vaccination-covid-19/(?P<where>\w+)', CentersPage), URL(r'/centre-de-sante/.*', CenterPage))
 
 class Application:
     @classmethod
