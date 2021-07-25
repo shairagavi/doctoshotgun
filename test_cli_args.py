@@ -34,7 +34,7 @@ def test_center_arg_should_filter_centers(MockDoctolibDE, tmp_path):
     call_application(city, cli_args=['--center', center])
 
     # assert
-    assert mock_doctolib_de.get_patients.called
+    assert mock_doctolib_de.patient.get_patients(mock_doctolib_de).called
     assert mock_doctolib_de.try_to_book.called
     for call_args_list in mock_doctolib_de.try_to_book.call_args_list:
         assert call_args_list.args[0]['name_with_title'] == center
@@ -56,7 +56,7 @@ def test_center_exclude_arg_should_filter_excluded_centers(MockDoctolibDE, tmp_p
     call_application(city, cli_args=['--center-exclude', excluded_center])
 
     # assert
-    assert mock_doctolib_de.get_patients.called
+    assert mock_doctolib_de.patient.get_patients(mock_doctolib_de).called
     assert mock_doctolib_de.try_to_book.called
     for call_args_list in mock_doctolib_de.try_to_book.call_args_list:
         assert call_args_list.args[0]['name_with_title'] != excluded_center
@@ -72,7 +72,7 @@ def get_mocked_doctolib(MockDoctolibDE):
     mock_doctolib_de.KEY_MODERNA = DoctolibDE.KEY_MODERNA
     mock_doctolib_de.KEY_JANSSEN = DoctolibDE.KEY_JANSSEN
 
-    mock_doctolib_de.get_patients.return_value = [
+    mock_doctolib_de.patient.get_patients(mock_doctolib_de).return_value = [
         {"first_name": 'First', "last_name": 'Name'}
     ]
     mock_doctolib_de.do_login.return_value = True

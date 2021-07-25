@@ -214,6 +214,38 @@ class CityNotFound(Exception):
     pass
 
 
+class Patient():
+    def get_patients(self, docto):
+        docto.master_patient.go()
+
+        return docto.page.get_patients()
+
+    def get_patient(self, docto):
+        patients = self.get_patients(docto)
+
+        if len(patients) == 0:
+            print("It seems that you don't have any Patient registered in your Doctolib account. Please fill your Patient data on Doctolib Website.")
+            return 1
+        if args.patient >= 0 and args.patient < len(patients):
+            return patients[args.patient]
+        elif len(patients) > 1:
+            print('Available patients are:')
+            for i, patient in enumerate(patients):
+                print('* [%s] %s %s' %
+                      (i, patient['first_name'], patient['last_name']))
+            while True:
+                print('For which patient do you want to book a slot?',
+                      end=' ', flush=True)
+                try:
+                    return patients[int(sys.stdin.readline().strip())]
+                except (ValueError, IndexError):
+                    continue
+                else:
+                    break
+        else:
+            return patients[0]
+
+
 class Doctolib(LoginBrowser):
     # individual properties for each country. To be defined in subclasses
     BASEURL = ""
@@ -334,11 +366,6 @@ class Doctolib(LoginBrowser):
             if next_page:
                 for center in self.find_centers(where, motives, next_page):
                     yield center
-
-    def get_patients(self):
-        self.master_patient.go()
-
-        return self.page.get_patients()
 
     @classmethod
     def normalize(cls, string):
@@ -686,28 +713,7 @@ class Application:
         if not docto.do_login(args.code):
             return 1
 
-        patients = docto.get_patients()
-        if len(patients) == 0:
-            print("It seems that you don't have any Patient registered in your Doctolib account. Please fill your Patient data on Doctolib Website.")
-            return 1
-        if args.patient >= 0 and args.patient < len(patients):
-            docto.patient = patients[args.patient]
-        elif len(patients) > 1:
-            print('Available patients are:')
-            for i, patient in enumerate(patients):
-                print('* [%s] %s %s' %
-                      (i, patient['first_name'], patient['last_name']))
-            while True:
-                print('For which patient do you want to book a slot?',
-                      end=' ', flush=True)
-                try:
-                    docto.patient = patients[int(sys.stdin.readline().strip())]
-                except (ValueError, IndexError):
-                    continue
-                else:
-                    break
-        else:
-            docto.patient = patients[0]
+        docto.patient = docto.patient.get_patient(docto)
 
         motives = []
         if not args.pfizer and not args.moderna and not args.janssen and not args.astrazeneca:
