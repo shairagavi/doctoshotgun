@@ -214,6 +214,7 @@ class CityNotFound(Exception):
     pass
 
 
+@Singleton
 class Doctolib(LoginBrowser):
     # individual properties for each country. To be defined in subclasses
     BASEURL = ""
@@ -681,8 +682,8 @@ class Application:
         if not args.password:
             args.password = getpass.getpass()
 
-        docto = doctolib_map[args.country](
-            args.username, args.password, responses_dirname=responses_dirname)
+        doctolib = Doctolib.getInstance(args.username, args.password, responses_dirname=responses_dirname)
+        docto = doctolib_map[args.country](doctolib)
         if not docto.do_login(args.code):
             return 1
 
@@ -856,6 +857,24 @@ class Application:
                 print(message)
                 return 1
         return 0
+
+
+class Singleton:
+    def __init__(self, decorated):
+        self._decorated = decorated
+
+    def getInstance(self):
+        try:
+            return self._instance
+        except AttributeError:
+            self._instance = self._decorated()
+            return self._instance
+    
+    def __call__(self):
+        raise TypeError('Singletons must be accessed through `instance()`.')
+
+    def __instancecheck__(self, inst):
+        return isinstance(inst, self._decorated)
 
 
 if __name__ == '__main__':
