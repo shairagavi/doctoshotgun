@@ -682,7 +682,7 @@ class Application:
         if not args.password:
             args.password = getpass.getpass()
 
-        doctolib = Doctolib.getInstance(args.username, args.password, responses_dirname=responses_dirname)
+        doctolib = Doctolib.get_instance(args.username, args.password, responses_dirname=responses_dirname)
         docto = doctolib_map[args.country](doctolib)
         if not docto.do_login(args.code):
             return 1
@@ -863,7 +863,7 @@ class Singleton:
     def __init__(self, decorated):
         self._decorated = decorated
 
-    def getInstance(self):
+    def get_instance(self):
         try:
             return self._instance
         except AttributeError:
