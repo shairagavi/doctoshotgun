@@ -217,7 +217,6 @@ class CityNotFound(Exception):
 class Doctolib(LoginBrowser):
     # individual properties for each country. To be defined in subclasses
     BASEURL = ""
-    vaccine_motives = {}
     centers = URL('')
     center = URL('')
     # common properties
@@ -295,7 +294,7 @@ class Doctolib(LoginBrowser):
 
     def find_centers(self, where, motives=None, page=1):
         if motives is None:
-            motives = self.vaccine_motives.keys()
+            motives = self.get_vaccine_motives().vaccine_motives.keys()
         for city in where:
             try:
                 self.centers.go(where=city, params={
@@ -340,6 +339,9 @@ class Doctolib(LoginBrowser):
 
         return self.page.get_patients()
 
+    def get_vaccine_motives(self):
+        pass
+
     @classmethod
     def normalize(cls, string):
         nfkd = unicodedata.normalize('NFKD', string)
@@ -359,7 +361,7 @@ class Doctolib(LoginBrowser):
         motives_id = dict()
         for vaccine in vaccine_list:
             motives_id[vaccine] = self.page.find_motive(
-                r'.*({})'.format(vaccine), singleShot=(vaccine == self.vaccine_motives[self.KEY_JANSSEN] or only_second or only_third))
+                r'.*({})'.format(vaccine), singleShot=(vaccine == self.get_vaccine_motives().vaccine_motives[self.KEY_JANSSEN] or only_second or only_third))
 
         motives_id = dict((k, v)
                           for k, v in motives_id.items() if v is not None)
@@ -550,29 +552,32 @@ class Doctolib(LoginBrowser):
 
 class DoctolibDE(Doctolib):
     BASEURL = 'https://www.doctolib.de'
-    KEY_PFIZER = '6768'
-    KEY_PFIZER_SECOND = '6769'
-    KEY_PFIZER_THIRD = None
-    KEY_MODERNA = '6936'
-    KEY_MODERNA_SECOND = '6937'
-    KEY_MODERNA_THIRD = None
-    KEY_JANSSEN = '7978'
-    KEY_ASTRAZENECA = '7109'
-    KEY_ASTRAZENECA_SECOND = '7110'
-    vaccine_motives = {
-        KEY_PFIZER: 'Pfizer',
-        KEY_PFIZER_SECOND: 'Zweit.*Pfizer|Pfizer.*Zweit',
-        KEY_PFIZER_THIRD: 'Dritt.*Pfizer|Pfizer.*Dritt',
-        KEY_MODERNA: 'Moderna',
-        KEY_MODERNA_SECOND: 'Zweit.*Moderna|Moderna.*Zweit',
-        KEY_MODERNA_THIRD: 'Dritt.*Moderna|Moderna.*Dritt',
-        KEY_JANSSEN: 'Janssen',
-        KEY_ASTRAZENECA: 'AstraZeneca',
-        KEY_ASTRAZENECA_SECOND: 'Zweit.*AstraZeneca|AstraZeneca.*Zweit',
-    }
+    KEY_PFIZER: '6768'
+    KEY_PFIZER_SECOND: '6769'
+    KEY_PFIZER_THIRD: None
+    KEY_MODERNA: '6936'
+    KEY_MODERNA_SECOND: '6937'
+    KEY_MODERNA_THIRD: None
+    KEY_JANSSEN: '7978'
+    KEY_ASTRAZENECA: '7109'
+    KEY_ASTRAZENECA_SECOND: '7110'
     centers = URL(r'/impfung-covid-19-corona/(?P<where>\w+)', CentersPage)
     center = URL(r'/praxis/.*', CenterPage)
 
+    def get_vaccine_motives(self):
+        vaccine_motives = {
+            KEY_PFIZER: 'Pfizer',
+            KEY_PFIZER_SECOND: 'Zweit.*Pfizer|Pfizer.*Zweit',
+            KEY_PFIZER_THIRD: 'Dritt.*Pfizer|Pfizer.*Dritt',
+            KEY_MODERNA: 'Moderna',
+            KEY_MODERNA_SECOND: 'Zweit.*Moderna|Moderna.*Zweit',
+            KEY_MODERNA_THIRD: 'Dritt.*Moderna|Moderna.*Dritt',
+            KEY_JANSSEN: 'Janssen',
+            KEY_ASTRAZENECA: 'AstraZeneca',
+            KEY_ASTRAZENECA_SECOND: 'Zweit.*AstraZeneca|AstraZeneca.*Zweit',
+        }
+        
+        return vaccine_motives
 
 class DoctolibFR(Doctolib):
     BASEURL = 'https://www.doctolib.fr'
@@ -585,20 +590,23 @@ class DoctolibFR(Doctolib):
     KEY_JANSSEN = '7945'
     KEY_ASTRAZENECA = '7107'
     KEY_ASTRAZENECA_SECOND = '7108'
-    vaccine_motives = {
-        KEY_PFIZER: 'Pfizer',
-        KEY_PFIZER_SECOND: '2de.*Pfizer',
-        KEY_PFIZER_THIRD: '3e.*Pfizer',
-        KEY_MODERNA: 'Moderna',
-        KEY_MODERNA_SECOND: '2de.*Moderna',
-        KEY_MODERNA_THIRD: '3e.*Moderna',
-        KEY_JANSSEN: 'Janssen',
-        KEY_ASTRAZENECA: 'AstraZeneca',
-        KEY_ASTRAZENECA_SECOND: '2de.*AstraZeneca',
-    }
-
     centers = URL(r'/vaccination-covid-19/(?P<where>\w+)', CentersPage)
     center = URL(r'/centre-de-sante/.*', CenterPage)
+
+    def get_vaccine_motives(self):
+        vaccine_motives = {
+            KEY_PFIZER: 'Pfizer',
+            KEY_PFIZER_SECOND: '2de.*Pfizer',
+            KEY_PFIZER_THIRD: '3e.*Pfizer',
+            KEY_MODERNA: 'Moderna',
+            KEY_MODERNA_SECOND: '2de.*Moderna',
+            KEY_MODERNA_THIRD: '3e.*Moderna',
+            KEY_JANSSEN: 'Janssen',
+            KEY_ASTRAZENECA: 'AstraZeneca',
+            KEY_ASTRAZENECA_SECOND: '2de.*AstraZeneca',
+        }
+
+        return vaccine_motives
 
 
 class Application:
@@ -761,7 +769,7 @@ class Application:
             else:
                 motives.append(docto.KEY_ASTRAZENECA)
 
-        vaccine_list = [docto.vaccine_motives[motive] for motive in motives]
+        vaccine_list = [docto.get_vaccine_motives().vaccine_motives[motive] for motive in motives]
 
         if args.start_date:
             try:
